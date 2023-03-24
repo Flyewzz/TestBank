@@ -1,0 +1,148 @@
+/* Define a consistent color scheme */
+
+:root {
+  --primary-color: #003087; /* navy blue */
+  --secondary-color: #E6E6E6; /* light grey */
+  --accent-color: #FFC72C; /* gold */
+}
+
+/* Apply a font family and size to the entire document */
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  color: #333;
+}
+
+/* Style the header */
+
+header {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Style the logo */
+
+header img {
+  height: 60px;
+}
+
+/* Style the navigation menu */
+
+nav ul {
+  list-style: none;
+  display: flex;
+}
+
+nav li {
+  margin: 0 20px;
+}
+
+nav a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+nav a:hover {
+  color: var(--accent-color);
+}
+
+/* Style the hero section */
+
+.hero {
+  background-color: var(--primary-color);
+  padding: 100px;
+  text-align: center;
+  color: #fff;
+}
+
+.hero h1 {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  font-size: 24px;
+  margin-bottom: 40px;
+}
+
+/* Style the main section */
+
+main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 50px;
+}
+
+section {
+  flex-basis: 30%;
+  margin-bottom: 30px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+section h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: var(--primary-color);
+}
+
+section p {
+  font-size: 16px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Style the button */
+
+.button {
+  background-color: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+
+input.button {
+  margin-top: 15px;
+}
+
+input[type='text'] {
+  margin: 5px 10px;
+}
+
+input[type='number'] {
+  margin: 5px 10px;
+}
+
+.button:hover {
+  background-color: #E29F1D; /* darker gold */
+}
+
+/* Style the footer */
+
+footer {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  text-align: center;
+  padding: 20px;
+}
+
+footer p {
+  margin: 0;
+}
