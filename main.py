@@ -1,74 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, g
-from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
+from flask import Flask, render_template, redirect, url_for, request, session, flash, g
 from decimal import Decimal
-import requests
+from werkzeug.security import check_password_hash, generate_password_hash
+from bank_app.bank.models import db, User, Account, get_db
+from bank_app.bank.auth import login_required
 import sqlite3
-from functools import wraps
-
-
-def get_db():
-  db = getattr(g, '_database', None)
-  if db is None:
-    db = g._database = sqlite3.connect('bank.db')
-
-    # create a cursor object to execute SQL statements
-    cursor = db.cursor()
-    # create a users table in the database
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                              id INTEGER PRIMARY KEY,
-                              username TEXT,
-                              password TEXT
-                         )''')
-
-    # create an accounts table in the database
-    cursor.execute('''CREATE TABLE IF NOT EXISTS accounts (
-                                  id INTEGER PRIMARY KEY,
-                                  user_id INTEGER,
-                                  currency TEXT,
-                                  balance DECIMAL(10, 2),
-                                  FOREIGN KEY(user_id) REFERENCES users(id)
-                             )''')
-    # commit the changes to the database
-    db.commit()
-  return db
-
-
-app = Flask(__name__)
-app.secret_key = 'SECRET_KEY'
 
 currencies = {
   "RUB": "₽",  # Russian ruble
   "USD": "$",  # American dollar
   "EUR": "€",  # European euro
   "PLN": "zł"  # Polish zloty
-}
-
-accounts = {
-  "John": {
-    "currency": "USD",
-    "balance": Decimal("1000")
-  },
-  "Jane": {
-    "currency": "EUR",
-    "balance": Decimal("5000")
-  },
-  "Tom": {
-    "currency": "EUR",
-    "balance": Decimal("300")
-  },
-  "Vizier": {
-    "currency": "RUB",
-    "balance": Decimal("100000")
-  },
-  "Zelda": {
-    "currency": "PLN",
-    "balance": Decimal("1000")
-  },
-  "Perlive": {
-    "currency": "PLN",
-    "balance": Decimal("1000")
-  }
 }
 
 exchange_rates = {
@@ -98,49 +39,29 @@ exchange_rates = {
   }
 }
 
+app = Flask(__name__)
+app.secret_key = 'SECRET_KEY'
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///bank.db"
+
+db.init_app(app)
+with app.app_context():
+  db.create_all()
+
+
+def get_exchange_rate(base_currency, target_currency):
+  return exchange_rates[base_currency][target_currency]
+
 
 @app.teardown_appcontext
-def close_connection(exception):
-  db = getattr(g, '_database', None)
-  if db is not None:
-    db.close()
+def close_db(error):
+  if hasattr(g, '_database'):
+    g._database.close()
 
 
-def get_user():
-  user_id = session.get('user_id')
-  if user_id:
-    with sqlite3.connect('bank.db') as conn:
-      cursor = conn.cursor()
-      cursor.execute("SELECT * FROM users WHERE id=?", (user_id, ))
-      user = cursor.fetchone()
-      if user:
-        return {'id': user[0], 'username': user[1], 'password': user[2]}
-  return None
-
-
-def login_required(f):
-
-  @wraps(f)
-  def decorated_function(*args, **kwargs):
-    if 'user_id' not in session:
-      return redirect(url_for('login'))
-    return f(*args, **kwargs)
-
-  return decorated_function
-
-
-@app.route('/protected')
-@login_required
-def protected():
-  return 'This page is only accessible to logged-in users.'
-
-
-@app.route("/")
+@app.route('/')
 def index():
-  user = get_user()
-  print(user)
+  user = User.query.filter_by(id=session.get('user_id')).first()
   return render_template("index.html",
-                         accounts=accounts,
                          currencies=currencies,
                          exchange_rates=exchange_rates,
                          user=user)
@@ -149,11 +70,20 @@ def index():
 @app.route('/personal_area')
 @login_required
 def personal_area():
-  user = get_user()
-  return render_template('personal_area.html', user=user)
+  user = User.query.filter_by(id=session.get('user_id')).first()
+  print(user)
+  users = User.query.filter(User.id != user.id).all()
+
+  users_accounts = {user: user.account for user in users}
+  return render_template('personal_area.html',
+                         user=user,
+                         current_user=user,
+                         current_account=user.account,
+                         users_accounts=users_accounts)
 
 
 @app.route('/transfer', methods=['POST'])
+@login_required
 def transfer():
   sender = request.form.get('sender')
   recipient = request.form.get('recipient')
@@ -167,49 +97,43 @@ def transfer():
     return render_template('transfer_error.html',
                            message="Amount should be positive")
 
-  with get_db() as conn:
-    cursor = conn.cursor()
+  sender_account = Account.query.filter_by(user_id=session['user_id']).first()
+  recipient_user = User.query.filter_by(username=recipient).first()
 
-    # check if sender has enough money in their account
-    cursor.execute("SELECT balance FROM accounts WHERE username = ?", (sender,))
-    sender_balance = cursor.fetchone()[0]
-    if amount > sender_balance:
-      return render_template(
-        'transfer_error.html',
-        message="That's not enough money to perform the transaction")
+  if not sender_account:
+    return render_template('transfer_error.html',
+                           message="Invalid sender account")
 
-    # get currency of sender and recipient
-    cursor.execute("SELECT currency FROM accounts WHERE username = ?", (sender,))
-    sender_currency = cursor.fetchone()[0]
-    cursor.execute("SELECT currency FROM accounts WHERE username = ?", (recipient,))
-    recipient_currency = cursor.fetchone()[0]
+  if not recipient_user:
+    return render_template('transfer_error.html',
+                           message="Invalid recipient account")
 
-    if sender_currency == recipient_currency:
-      # if sender and recipient have the same currency, transfer directly
-      cursor.execute("UPDATE accounts SET balance = balance - ? WHERE username = ?", (amount, sender))
-      cursor.execute("UPDATE accounts SET balance = balance + ? WHERE username = ?", (amount, recipient))
-    else:
-      # if sender and recipient have different currencies, convert using exchange rate
-      rate = get_exchange_rate(sender_currency, recipient_currency)
-      converted_amount = amount * rate
-      cursor.execute("UPDATE accounts SET balance = balance - ? WHERE username = ?", (amount, sender))
-      cursor.execute("UPDATE accounts SET balance = balance + ? WHERE username = ?", (converted_amount, recipient))
+  recipient_account = recipient_user.account
 
-    conn.commit()
+  if Decimal(sender_account.balance) < amount:
+    return render_template(
+      'transfer_error.html',
+      message="That's not enough money to perform the transaction")
+
+  # get currency of sender and recipient
+  sender_currency = sender_account.currency
+  recipient_currency = recipient_account.currency
+
+  if sender_currency == recipient_currency:
+    # if sender and recipient have the same currency, transfer directly
+    sender_account.balance = str(Decimal(sender_account.balance) - amount)
+    recipient_account.balance = str(Decimal(sender_account.balance) + amount)
+  else:
+    # if sender and recipient have different currencies, convert using exchange rate
+    rate = get_exchange_rate(sender_currency, recipient_currency)
+    converted_amount = amount * Decimal(rate)
+    sender_account.balance = str(Decimal(sender_account.balance) - amount)
+    recipient_account.balance = str(
+      Decimal(sender_account.balance) + converted_amount)
+
+  db.session.commit()
 
   return redirect('/')
-
-
-@app.route('/add_client', methods=['GET', 'POST'])
-def add_client():
-  if request.method == 'POST':
-    name = request.form['name']
-    currency = request.form['currency']
-    balance = request.form['balance']
-    accounts[name] = {"currency": currency, "balance": Decimal(balance)}
-    return redirect('/')
-  else:
-    return render_template('add_client.html', currencies=currencies)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -217,44 +141,32 @@ def login():
   if request.method == 'POST':
     username = request.form['username']
     password = request.form['password']
-    print(username)
-    print(password)
 
-    db = get_db()
-    cursor = db.cursor()
+    user = User.query.filter_by(username=username).first()
 
-    # get the user from the database
-    cursor.execute("SELECT * FROM users WHERE username=?", (username, ))
-    user = cursor.fetchone()
-    print(user)
-    # check if the user exists and the password is correct
-    if user is not None and check_password_hash(user[2], password):
-      session['user_id'] = user[0]
-      flash('You were logged in.')
-      return redirect(url_for('index'))
+    if not user or not check_password_hash(user.password_hash, password):
+      flash('Invalid username or password.')
+      return redirect(url_for('login'))
 
-    error = 'Invalid username or password.'
-    return render_template('login.html', error=error)
+    session['user_id'] = user.id
+    flash('You were successfully logged in.')
+    return redirect(url_for('index'))
 
   return render_template('login.html')
 
 
-# Registration route
 @app.route('/register', methods=['GET', 'POST'])
 def register():
   if request.method == 'POST':
     username = request.form['username']
     password = request.form['password']
     confirm_password = request.form['confirm_password']
-
-    db = get_db()
+    currency = request.form['currency']
+    balance = request.form['balance']
 
     # Check if username already exists in the database
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM users WHERE username=?", (username, ))
-    user = cursor.fetchone()
-
-    if user:
+    user = User.query.filter_by(username=username).first()
+    if user is not None:
       error = "Username already exists."
       return render_template('register.html', error=error)
 
@@ -265,20 +177,25 @@ def register():
 
     # Hash password and insert new user into the database
     hashed_password = generate_password_hash(password, method='sha256')
-    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
-                   (username, hashed_password))
-    db.commit()
+    new_user = User(username=username, password_hash=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
 
+    # Create an account for the new user
+    new_account = Account(currency=currency, balance=balance, user=new_user)
+    db.session.add(new_account)
+    db.session.commit()
+
+    print(new_account)
+
+    flash('You were successfully registered! Please log in.')
     return redirect(url_for('login'))
 
-  return render_template('register.html')
-
-
-def get_exchange_rate(base_currency, target_currency):
-  return exchange_rates[base_currency][target_currency]
+  return render_template('register.html', currencies=currencies)
 
 
 @app.route('/logout')
+@login_required
 def logout():
   session.pop('user_id', None)
   flash('You were logged out.')
@@ -286,64 +203,3 @@ def logout():
 
 
 app.run(host='0.0.0.0', debug=True, port=81)
-
-# First mistake
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank
-# 2. Press: Transfer
-# Result: Critical error, page is dead.
-
-# Second error:
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank
-# 2. In the Sender field, enter 0
-# 4. Press: Transfer
-# Result: Critical error, page is dead.
-
-# Third error:
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank
-# 2. In the Recipient field, enter 0
-# 4. Press: Transfer
-# Result: Critical error, page is dead.
-
-# Fourth error:
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank
-# 2. In the Sender field, enter John
-# 3. In the Recipient field, enter Jane
-# 3. In the Amount field, enter 1010
-# 4. Press: Transfer
-# Expected result: Transfer is not possible.
-# Result: John has -10 on his account
-
-# Fifth error:
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank
-# 2. In the Sender field, enter John
-# 3. In the Recipient field, enter Tom
-# 3. In the Amount field, enter -100
-# 4. Press: Transfer
-# Expected result: Transfer is not possible.
-# Result: John can steal money from Tom's account.
-
-# First mistake
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank#static/styles.css
-# 2. In the Sender field: enter Vizier
-# 3. In the Recipient field: enter Jane
-# 4. In the Amount field: enter 89599,80
-# 5. Press: Transfer
-# Expected result: It should be in Vizier's account 10400.2 zł.
-# Result: We see a non-existent amount in Vizier's account 10400.199999999997 zł.
-
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank#main.py
-# 2. In the Sender field: enter John
-# 3. In the Recipient field: enter Tom
-# 4. In the Amount field: enter 10
-# 5. Press: Transfer
-# Expected result: There should be 310 on Tom's account and 10 taken from Jim's account
-# Result: Critical error, page is dead. The error repeats with every user
-
-# 1. Go to: https://replit.com/@Flyewzz/ZeldaBank#main.py
-# 2. Look at the Add Client.
-# 3. In the Name field, enter Nobody
-# 4. In the Currency field chose USD ($)
-# 5. In the Balance field, enter - 10
-# 6. Press: ADD CLIENT
-# Expected result: We have a negative account
-# Result: The account cannot be negative

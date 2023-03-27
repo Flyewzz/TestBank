@@ -1,3 +1,12 @@
 {
-  "files": {}
+  "files": {
+    "bank_app/bank/routes.py": [
+      {
+        "id": "9e341674-cc4f-4543-a58e-daf7b54b1dd7",
+        "line": 22,
+        "version": 46,
+        "index": 527
+      }
+    ]
+  }
 }
