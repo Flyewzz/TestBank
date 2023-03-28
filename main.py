@@ -36,3 +36,15 @@ if __name__ == '__main__':
 # 1,18 * 21322,32 = 25 160,3376 = 1025160,34
 # Expected amount on F's account: 1025160,34 USD
 # Actual amount on F's account: 1003838.0176 USD
+
+
+
+
+#* Go to: https://zeldabank.flyewzz.repl.co
+#* Press: LOGIN
+#* In the Username field, enter: Petya
+#* In the Password field, enter: 1234
+#* Press: PETYA
+#* Look at the Currency Balance, Balance
+# Expected amount on Petya's account: 38987.00 USD
+# Actual amount on Petya's account: 38987.000 USD
