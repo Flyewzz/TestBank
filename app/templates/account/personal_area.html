@@ -12,37 +12,9 @@
 </section>
 
 <section>
-  <h2>Other Accounts</h2>
-
-  <table>
-    <tr>
-      <th>Account Name</th>
-      <th>Balance</th>
-      <th>Currency</th>
-      <th>Action</th>
-    </tr>
-    {% for user, account in users_accounts.items() %}
-      <tr>
-        <td>{{ user.username }}</td>
-        <td>{{ account.balance }}</td>
-        <td>{{ account.currency }}</td>
-        <td>
-          <form method="POST" action="/transfer">
-            <input type="hidden" name="sender" value="{{ current_user.username }}">
-            <input type="hidden" name="recipient" value="{{ user.username }}">
-            <input type="number" name="amount" step="0.01" min="0.01" placeholder="Amount" required>
-            <input type="submit" value="Send">
-          </form>
-        </td>
-      </tr>
-    {% endfor %}
-  </table>
-</section>
-
-<section>
             <h2>Transfer Money</h2>
 
-            <form action="/transfer" method="POST">
+            <form action="{{ url_for('account.transfer') }}" method="POST">
                     <input type="hidden" name="sender" value="{{ current_user.username }}">
                 <div class="form-group">
                     <label for="recipient">Recipient:</label>
