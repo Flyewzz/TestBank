@@ -12,27 +12,115 @@
 </section>
 
 <section>
-            <h2>Transfer Money</h2>
+  <h2>Transfer Money</h2>
 
-            <form action="{{ url_for('account.transfer') }}" method="POST">
-                    <input type="hidden" name="sender" value="{{ current_user.username }}">
-                <div class="form-group">
-                    <label for="recipient">Recipient:</label>
-                    <select name="recipient" id="recipient" required>
-                        {% for user, _ in users_accounts.items() %}
-                        <option value="{{ user.username }}">{{ user.username }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+  <form action="{{ url_for('account.transfer') }}" method="POST">
+    <input type="hidden" name="sender" value="{{ current_user.username }}">
+    <div class="form-group">
+      <label for="recipient">Recipient:</label>
+      <select name="recipient" id="recipient" required>
+        {% for user, _ in users_accounts.items() %}
+        <option value="{{ user.username }}">{{ user.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-                <div class="form-group">
-                    <label for="amount">Amount:</label>
-                    <input type="number" step="0.01" name="amount" id="amount" required>
-                </div>
+    <div class="form-group">
+      <label for="amount">Amount:</label>
+      <input type="number" step="0.01" name="amount" id="amount" required>
+    </div>
 
-                <div class="form-group">
-                    <button type="submit" class="button">Transfer</button>
-                </div>
-            </form>
-        </section>
+    <div class="form-group">
+      <button type="submit" class="button">Transfer</button>
+    </div>
+  </form>
+</section>
+
+<section>
+  <h2>Transaction History</h2>
+  <div class="tabs">
+    <button class="tablinks" onclick="openTab(event, 'outgoing')">Outgoing</button>
+    <button class="tablinks" onclick="openTab(event, 'incoming')">Incoming</button>
+  </div>
+
+  <div id="outgoing" class="tabcontent">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Recipient</th>
+          <th>Amount</th>
+          <th>Currency</th>
+          <th>Exchange Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for transaction in current_user.sent_transactions %}
+        <tr>
+          <td>{{ transaction.date }}</td>
+          <td>{{ transaction.recipient.username }}</td>
+          <td>{{ transaction.amount }}</td>
+          <td>{{ transaction.currency }}</td>
+          <td>{{ transaction.exchange_rate }}</td>
+        </tr>
+         <tr>
+          <td>{{ transaction.date }}</td>
+          <td>{{ transaction.recipient.username }}</td>
+          <td>{{ transaction.amount }}</td>
+          <td>{{ transaction.currency }}</td>
+          <td>{{ transaction.exchange_rate }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="incoming" class="tabcontent">
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Sender</th>
+          <th>Amount</th>
+          <th>Currency</th>
+          <th>Exchange Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for transaction in current_user.received_transactions %}
+        <tr>
+          <td>{{ transaction.date }}</td>
+          <td>{{ transaction.sender.username }}</td>
+          <td>{{ transaction.amount }}</td>
+          <td>{{ transaction.currency }}</td>
+          <td>{{ transaction.exchange_rate }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  function openTab(evt, tabName) {
+  // Declare all variables
+  var i, tabcontent, tablinks;
+
+  // Get all elements with class="tabcontent" and hide them
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+
+  // Get all elements with class="tablinks" and remove the class "active"
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+
+  // Show the current tab, and add an "active" class to the link that opened the tab
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
 {% endblock %}

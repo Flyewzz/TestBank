@@ -33,12 +33,12 @@ def register():
     user = User.query.filter_by(username=username).first()
     if user is not None:
       error = "Username already exists."
-      return render_template('auth/register.html', error=error)
+      return render_template('auth/register.html', currencies=currencies, error=error)
 
     # Check if passwords match
     if password != confirm_password:
       error = "Passwords do not match."
-      return render_template('auth/register.html', error=error)
+      return render_template('auth/register.html', currencies=currencies, error=error)
 
     # Hash password and insert new user into the database
     hashed_password = generate_password_hash(password, method='sha256')
@@ -47,7 +47,9 @@ def register():
     db.session.commit()
 
     # Create an account for the new user
-    new_account = Account(currency=currency, balance=balance, user=new_user)
+    new_account = Account(currency=currency,
+                          balance=balance,
+                          user_id=new_user.id)
     db.session.add(new_account)
     db.session.commit()
 

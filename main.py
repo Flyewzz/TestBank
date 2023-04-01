@@ -48,3 +48,48 @@ if __name__ == '__main__':
 #* Look at the Currency Balance, Balance
 # Expected amount on Petya's account: 38987.00 USD
 # Actual amount on Petya's account: 38987.000 USD
+
+######30.03.2023######
+#* Go to: https://zeldabank.flyewzz.repl.co
+#* Press: LOGIN
+#* In the Username field, enter: Vasya
+#* In the Password field, enter: 1234
+# Press: Login
+#* Press: VASYA
+#* Look at the Transfer Money, choose Recipient: Petya, Amount:7,88
+# Press: Transfer 
+#* Press: LOGOUT
+#* In the Username field, enter: Petya
+#* In the Password field, enter: 1234
+# Pres: Login
+#* Press: PETYA
+# Expected amount on Petya's account: 20000 -> 20000.11 USD
+# Actual amount on Petya's account: 20000,09456 USD
+
+#* Press: LOGIN
+#* In the Username field, enter: A
+#* In the Password field, enter: 1
+#* Press: A
+#* Look at the Current Balance amd remember Balance: 8892.12
+#* Press: LOGOUT
+#* Press: LOGIN
+#* In the Username field, enter: Vasya
+#* In the Password field, enter: 1234
+#* Press: VASYA
+#* Look at the Current Balance: 7892.12 
+#* In Transfer Money select A, amount 1000
+#* Press: TRANSFER
+#* Press: LOGOUT
+#* Log in to account A and look at A's balance
+# Expected amount on A's account: 9892,12 RUB
+# Actual amount on A's account: 7892.12 RUB
+
+#* Press: REGISTER
+#* In the Username field, enter: D
+#* In the Password field, enter: 1
+#* In the Confirm Password, enter:12
+#* In the Currency: choose RUB
+#* In the Balance, enter: 100000
+#* Press: REGISTER 
+# Expected result: Password mismatch
+# Actual result: Mismatch of passwords and inability to choose currency

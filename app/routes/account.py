@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, session, url_for
 from decimal import Decimal
-from app.models.models import db, User, Account
+from app.models.models import db, User, Account, Transaction
 from .auth import login_required
 from app.common.exchange_rates import currencies, exchange_rates, get_exchange_rate
 
@@ -72,6 +72,7 @@ def transfer():
     # if sender and recipient have the same currency, transfer directly
     sender_account.balance = str(Decimal(sender_account.balance) - amount)
     recipient_account.balance = str(Decimal(sender_account.balance) + amount)
+    rate = Decimal(1.0)
   else:
     # if sender and recipient have different currencies, convert using exchange rate
     rate = get_exchange_rate(sender_currency, recipient_currency)
@@ -81,6 +82,16 @@ def transfer():
     recipient_account.balance = str(
       Decimal(recipient_account.balance) + converted_amount)
 
+
+# Create a new transaction record
+  transaction = Transaction(sender_id=sender_account.user_id,
+                            recipient_id=recipient_user.id,
+                            sender_account=sender_account,
+                            recipient_account=recipient_account,
+                            amount=str(amount),
+                            currency=sender_currency,
+                            exchange_rate=float(rate))
+  db.session.add(transaction)
   db.session.commit()
 
   return redirect(url_for('account.personal_area'))
