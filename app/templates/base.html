@@ -13,7 +13,11 @@
             <li><a href="{{ url_for('account.index') }}">Home</a></li>
             {% if user %}
                 <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
-                <li><a href="{{ url_for('account.personal_area') }}">{{ user.username }}</a></li>
+                {% if user.is_admin %}
+                    <li><a href="{{ url_for('admin.backoffice') }}">{{ user.username }} (A)</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('account.personal_area') }}">{{ user.username }}</a></li>
+                {% endif %}
             {% else %}
                 <li><a href="{{ url_for('auth.login') }}">Login</a></li>
                 <li><a href="{{ url_for('auth.register') }}">Register</a></li>

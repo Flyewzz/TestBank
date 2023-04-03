@@ -28,6 +28,7 @@ def register():
     confirm_password = request.form['confirm_password']
     currency = request.form['currency']
     balance = request.form['balance']
+    is_admin = 'is_admin' in request.form
 
     # Check if username already exists in the database
     user = User.query.filter_by(username=username).first()
@@ -42,7 +43,7 @@ def register():
 
     # Hash password and insert new user into the database
     hashed_password = generate_password_hash(password, method='sha256')
-    new_user = User(username=username, password_hash=hashed_password)
+    new_user = User(username=username, password_hash=hashed_password, is_admin=is_admin)
     db.session.add(new_user)
     db.session.commit()
 

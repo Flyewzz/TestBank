@@ -12,7 +12,8 @@ class User(UserMixin, db.Model):
   password_hash = db.Column(db.String(128))
 
   account = db.relationship('Account', backref='user', uselist=False)
-
+  is_admin = db.Column(db.Boolean, default=False, nullable=False)
+  
   def __repr__(self):
     return '<User {}>'.format(self.username)
 
@@ -23,10 +24,19 @@ class Account(db.Model):
   user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
   currency = db.Column(db.String(3))
   balance = db.Column(db.String(20))
-
+  is_blocked = db.Column(db.Boolean, default=False, nullable=False)
+  
   def __repr__(self):
     return '<Account {}>'.format(self.id)
 
+  def to_dict(self):
+    return {
+        'id': self.id,
+        'user_id': self.user_id,
+        'currency': self.currency,
+        'balance': self.balance,
+        'is_blocked': self.is_blocked,
+    }
 
 class Transaction(db.Model):
   id = db.Column(db.Integer, primary_key=True)

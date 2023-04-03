@@ -93,3 +93,87 @@ if __name__ == '__main__':
 #* Press: REGISTER 
 # Expected result: Password mismatch
 # Actual result: Mismatch of passwords and inability to choose currency
+
+#02.04.2023 
+#I created 8 accounts (A,B,C,D,E,F,G,H)
+#Two of them are administrators (A and E)
+#I checked the ability to make transfers to blocked and unblocked users, I checked if the transfer scale is correct and if you can send more money than we have on the account, whether you can send negative amounts, I checked if any error pops up when registering a new user (different passwords, same names)
+
+#* Go to: https://zeldabank.flyewzz.repl.co/login
+#* In the Username field, enter: B
+#* In the Password field, enter: 1
+# Press: Login
+#* Press: B
+#* Look at the Transfer Money, choose Recipient: A, Amount: 7,88
+# Press: Transfer 
+#* Press: LOGOUT
+#* In the Username field, enter: A
+#* In the Password field, enter: 1
+# Pres: Login
+#* Press: A(A) (in the header of site)
+# Expected result: It is not possible to make a transfer to a blocked account
+# Actual result: The transfer was successful even though the user is blocked
+
+#* Go to: https://zeldabank.flyewzz.repl.co/login
+#* In the Username field, enter: D
+#* In the Password field, enter: 1
+# Press: Login
+#* Press: D
+#* Look at the Transfer Money, choose Recipient: C, Amount: 10000
+# Press: Transfer 
+# Expected result: You cannot send money from a blocked account
+# Actual result: The transfer was sent without problems
+
+#* Go to: https://zeldabank.flyewzz.repl.co/backoffice (before log out of the account you are logged in to)
+# Expected result: You will be redirected to the login page.
+# Actual result: We see the screamed page with code.
+
+#* Go to: https://zeldabank.flyewzz.repl.co/login
+#* Press: LOGIN
+#* In the Username field, enter: E
+#* In the Password field, enter: 1
+# Press: Login
+#* Press: E
+#* Look at the Transfer Money, choose Recipient: F, Amount:10,88
+# Press: Transfer 
+#* Press: LOGOUT
+#* In the Username field, enter: A
+#* In the Password field, enter: 1
+# Pres: Login
+#* Press: A(A)
+# Expected result: Visibility of two digits after the decimal point in account E and F
+# Actual result: From the backoffice, see the sum after the decimal points of account E and F (E = 1000098.920 EUR, F = 1000000000000000894.0096 RUB)
+
+#* Go to: https://zeldabank.flyewzz.repl.co/login
+#* Press: LOGIN
+#* In the Username field, enter: C
+#* In the Password field, enter: 1
+# Press: Login
+#* Press: C
+#* Look at the Transaction History. 
+# Expected result: We should see individual information about the money sent.
+# Actual result: We see the information about the money sent repeated twice.
+
+#* Go to: https://zeldabank.flyewzz.repl.co
+#* Press: REGISTER
+#* In the Username field, enter: G
+#* In the Password field, enter: 1
+#* In the Confirm Password field, enter: 1
+#* In place of currency, select RUB
+#* In the Balance, enter: -10,88
+# Press: REGISTER
+#* In the Username field, enter: G
+#* In the Password field, enter: 1
+# Pres: Login
+#* Press: G
+# Actual result: An account with a negative balance has been created.
+# Expected result: You cannot create an account with negative balance.
+
+#* Go to: https://zeldabank.flyewzz.repl.co/login
+#* Press: LOGIN
+#* In the Username field, enter: B
+#* In the Password field, enter: 1
+#* Press: Login
+#* Change a website address (URI) manually (https://zeldabank.flyewzz.repl.co) add backoffice (https://zeldabank.flyewzz.repl.co/backoffice) press: enter
+# Expected result: 403 Forbidden (for standard user)
+# Actual result: We have access to the back office and can block users from there.

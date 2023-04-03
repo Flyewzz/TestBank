@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Backoffice{% endblock %}
+
+{% block content %}
+    <h1>Accounts</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Currency</th>
+                <th>Balance</th>
+                <th>Blocked</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for account in accounts %}
+                <tr>
+                    <td>{{ account.id }}</td>
+                    <td>{{ account.user.username }}</td>
+                    <td>{{ account.currency }}</td>
+                    <td>{{ account.balance }}</td>
+                    <td>{{ 'Yes' if account.is_blocked else 'No' }}</td>
+                    <td>
+                        <form action="{{ url_for('admin.block_account', account_id=account.id) }}" method="POST">
+                            {% if account.is_blocked %}
+                                <button type="submit" class="button">Unblock</button>
+                            {% else %}
+                                <button type="submit" class="button">Block</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

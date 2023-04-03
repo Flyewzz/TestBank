@@ -3,6 +3,12 @@
 {% block title %}Personal Area{% endblock %}
 
 {% block content %}
+{% if current_account.is_blocked %}
+<section>
+  <h2 style="color: red">Your account is blocked</h2>
+</section>
+{% endif %}
+
 <section>
   <h2>Current Balance</h2>
   <div class="balance">
